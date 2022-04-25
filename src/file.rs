@@ -2,10 +2,13 @@ use std::{io::Write, path::Path};
 
 use crate::log::{log_error, log_info, log_info_depth_file};
 
+/// Return the file name of a Path as a String slice
 pub fn get_file_name<'a, P: ?Sized + AsRef<Path>>(path: &'a P) -> &'a str {
     path.as_ref().file_name().unwrap().to_str().unwrap()
 }
 
+/// Replace include directive in html _include folder
+/// Currently doesn't handle longer UTF-8 characters
 fn replace_html_include(path: &Path, include_folder: &Path) -> Result<String, std::io::Error> {
     let mut file_content = std::fs::read_to_string(path).unwrap();
     let chars: Vec<char> = file_content.chars().collect();
@@ -74,6 +77,8 @@ pub fn cp_recursive(
     include_folder: &Path,
 ) -> Result<(), std::io::Error> {
     if Path::is_file(src) {
+        // Manual handling of html files
+        // TODO: should be more plug and play
         if src.extension().unwrap() == "html" {
             let mut file = std::fs::File::create(destination).unwrap();
             let file_content = replace_html_include(src, include_folder).unwrap();
@@ -91,6 +96,7 @@ pub fn cp_recursive(
 
     log_info_depth_file("", depth as usize, &src);
 
+    // Recursively call the function on child entries
     for child in src.read_dir().unwrap().filter_map(|c| c.ok()) {
         let child_pathbuf = child.path();
         let child_path = child_pathbuf.as_path();
