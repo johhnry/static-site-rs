@@ -1,4 +1,4 @@
-use std::{io::Write, path::Path};
+use std::{collections::HashMap, io::Write, path::Path, time::UNIX_EPOCH};
 
 use crate::log::{log_error, log_info, log_info_depth_file};
 
@@ -75,7 +75,10 @@ pub fn cp_recursive(
     force: bool,
     depth: u32,
     include_folder: &Path,
-) -> Result<(), std::io::Error> {
+    mtimes: &mut HashMap<String, u64>,
+) -> Result<bool, std::io::Error> {
+    let mut children_modified = false;
+
     if Path::is_file(src) {
         // Manual handling of html files
         // TODO: should be more plug and play
@@ -83,18 +86,35 @@ pub fn cp_recursive(
             let mut file = std::fs::File::create(destination).unwrap();
             let file_content = replace_html_include(src, include_folder).unwrap();
             file.write(file_content.as_bytes()).unwrap();
+            children_modified = true;
         } else {
-            std::fs::copy(src, destination)?;
+            let current_mtime = src
+                .metadata()?
+                .modified()?
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_secs();
+
+            let need_copy = match mtimes.get(&src.display().to_string()) {
+                Some(previous_time) => current_mtime != *previous_time,
+                None => true,
+            };
+
+            if need_copy {
+                std::fs::copy(src, destination)?;
+                mtimes.insert(String::from(src.to_string_lossy()), current_mtime);
+                children_modified = true;
+            }
         }
 
-        return Ok(());
+        log_info_depth_file(children_modified, depth as usize, &src);
+        return Ok(children_modified);
     } else {
         if !Path::exists(&destination) {
             std::fs::create_dir(destination).unwrap();
+            children_modified = true;
         }
     }
-
-    log_info_depth_file("", depth as usize, &src);
 
     // Recursively call the function on child entries
     for child in src.read_dir().unwrap().filter_map(|c| c.ok()) {
@@ -102,17 +122,20 @@ pub fn cp_recursive(
         let child_path = child_pathbuf.as_path();
         let destination_child_path = &destination.join(child_path.file_name().unwrap());
 
-        log_info_depth_file("", (depth + 1) as usize, &destination_child_path);
+        // log_info_depth_file( (depth + 1) as usize, &destination_child_path);
 
-        cp_recursive(
-            child_path,
-            destination_child_path,
-            force,
-            depth + 1,
-            include_folder,
-        )
-        .expect("Error when recursively calling copy");
+        children_modified = children_modified
+            || cp_recursive(
+                child_path,
+                destination_child_path,
+                force,
+                depth + 1,
+                include_folder,
+                mtimes,
+            )
+            .unwrap();
     }
 
-    Ok(())
+    log_info_depth_file(children_modified, depth as usize, &src);
+    Ok(children_modified)
 }

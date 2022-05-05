@@ -2,8 +2,11 @@ use std::path::Path;
 
 mod file;
 mod log;
+mod mtime;
+
 use file::cp_recursive;
 use log::{exit_with_message, log_error, log_info};
+use mtime::{read_previous_mtimes, write_mtimes};
 
 static INCLUDE_FOLDER: &str = "_include";
 
@@ -27,6 +30,7 @@ fn build(force: bool) -> Result<(), std::io::Error> {
         log_info("Using existing build folder");
     }
 
+    let mut mtimes = read_previous_mtimes()?;
     log_info(format!("Using force mode: {:?}", force).as_str());
 
     // For every file and folder in src copy it to build
@@ -55,11 +59,20 @@ fn build(force: bool) -> Result<(), std::io::Error> {
                     .as_str(),
                 );
 
-                cp_recursive(entry_path, &destination, force, 0, &include_folder)?;
+                cp_recursive(
+                    entry_path,
+                    &destination,
+                    force,
+                    0,
+                    &include_folder,
+                    &mut mtimes,
+                )?;
             }
             Err(err) => exit_with_message(format!("Error when reading folder {:?}", err).as_str()),
         }
     }
+
+    write_mtimes(mtimes)?;
 
     Ok(())
 }

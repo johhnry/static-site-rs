@@ -21,12 +21,13 @@ pub fn log_error(msg: &str) {
     log(msg, LogLevel::Error);
 }
 
-pub fn log_info_depth_file(msg: &str, depth: usize, path: &Path) {
+pub fn log_info_depth_file(modified: bool, depth: usize, path: &Path) {
+    let emoji = if modified { "🔄" } else { "✅" };
     log_info(
         format!(
-            "{}⤷{} {}",
+            "{}{} {}",
             "  ".repeat((depth) as usize),
-            msg,
+            emoji,
             get_file_name(path),
         )
         .as_str(),
