@@ -86,8 +86,6 @@ Now the build version includes the header and footer:
 
 - Handle UTF-8 characters spanning across multiple bytes (since replacing content in a file is shifted...)
 
-- Use caching when building the files again
-
 - Handle more sophisticated syntax for directives `{% %}` like variables and keywords. For example it could be `{% include test.html %}` and `{% var title %}`
 
 - Register processor for handling different file types like css, html, js or images...
