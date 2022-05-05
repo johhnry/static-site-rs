@@ -124,16 +124,17 @@ pub fn cp_recursive(
 
         // log_info_depth_file( (depth + 1) as usize, &destination_child_path);
 
-        children_modified = children_modified
-            || cp_recursive(
-                child_path,
-                destination_child_path,
-                force,
-                depth + 1,
-                include_folder,
-                mtimes,
-            )
-            .unwrap();
+        let copy_child = cp_recursive(
+            child_path,
+            destination_child_path,
+            force,
+            depth + 1,
+            include_folder,
+            mtimes,
+        )
+        .unwrap();
+
+        children_modified = children_modified || copy_child;
     }
 
     log_info_depth_file(children_modified, depth as usize, &src);
