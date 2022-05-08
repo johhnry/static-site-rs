@@ -80,31 +80,29 @@ pub fn cp_recursive(
     let mut children_modified = false;
 
     if Path::is_file(src) {
-        // Manual handling of html files
-        // TODO: should be more plug and play
-        if src.extension().unwrap() == "html" {
-            let mut file = std::fs::File::create(destination).unwrap();
-            let file_content = replace_html_include(src, include_folder).unwrap();
-            file.write(file_content.as_bytes()).unwrap();
-            children_modified = true;
-        } else {
-            let current_mtime = src
-                .metadata()?
-                .modified()?
-                .duration_since(UNIX_EPOCH)
-                .unwrap()
-                .as_secs();
+        let current_mtime = src
+            .metadata()?
+            .modified()?
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
 
-            let need_copy = match mtimes.get(&src.display().to_string()) {
-                Some(previous_time) => current_mtime != *previous_time,
-                None => true,
-            };
+        let need_copy = match mtimes.get(&src.display().to_string()) {
+            Some(previous_time) => current_mtime != *previous_time,
+            None => true,
+        };
 
-            if need_copy {
+        if need_copy {
+            if src.extension().unwrap() == "html" {
+                let mut file = std::fs::File::create(destination).unwrap();
+                let file_content = replace_html_include(src, include_folder).unwrap();
+                file.write(file_content.as_bytes()).unwrap();
+            } else {
                 std::fs::copy(src, destination)?;
-                mtimes.insert(String::from(src.to_string_lossy()), current_mtime);
-                children_modified = true;
             }
+
+            mtimes.insert(String::from(src.to_string_lossy()), current_mtime);
+            children_modified = true;
         }
 
         log_info_depth_file(children_modified, depth as usize, &src);
