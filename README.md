@@ -1,5 +1,7 @@
 # Rust static site generator
 
+![](https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white)
+
 This project is a very simple static site generator written in Rust.
 
 ## How it works
@@ -24,6 +26,8 @@ To build your website, run the `build` action in your project's directory:
 ```bash
 $ static-site-rs build
 ```
+
+Use `--force` to rebuild all `.html` files even if they are not modified. (useful when changing files that are included)
 
 With the above example it will do the following:
 
@@ -83,6 +87,8 @@ Now the build version includes the header and footer:
 ```
 
 ## TODO
+
+- Rebuild `.html` file only if one of the dependency changed or the file itself changed
 
 - Handle UTF-8 characters spanning across multiple bytes (since replacing content in a file is shifted...)
 
