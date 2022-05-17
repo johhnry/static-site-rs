@@ -93,8 +93,9 @@ pub fn cp_recursive(
         };
 
         let is_html = src.extension().unwrap() == "html";
+        let is_dest_exist = destination.exists();
 
-        if need_copy || (is_html && force) {
+        if need_copy || (is_html && force) || !is_dest_exist {
             if is_html {
                 let mut file = std::fs::File::create(destination).unwrap();
                 let file_content = replace_html_include(src, include_folder).unwrap();
