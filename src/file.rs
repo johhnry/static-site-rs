@@ -92,7 +92,7 @@ pub fn cp_recursive(
             None => true,
         };
 
-        let is_html = src.extension().unwrap() == "html";
+        let is_html = src.extension().map(|e| e == "html").unwrap_or(false);
         let is_dest_exist = destination.exists();
 
         if need_copy || (is_html && force) || !is_dest_exist {
